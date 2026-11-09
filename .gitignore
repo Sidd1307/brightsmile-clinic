@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+*.db
+*.db-wal
+*.db-shm
+server.log
+screenshots/
+.pytest_cache/
+.vercel/

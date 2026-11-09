@@ -1,0 +1,6 @@
+.venv
+tests
+scripts
+screenshots
+*.db
+server.log

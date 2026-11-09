@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Front desk · BrightSmile Dental</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+  <style>
+    body { background: var(--enamel); }
+    .dash { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
+    .dash__top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .dash__top .brand { color: var(--ink); }
+    .dash__top .brand__mark { fill: var(--sea); }
+    .dash__top a.back { margin-left: auto; color: var(--sea-deep); font-weight: 700; }
+    h1 { font: 800 clamp(30px, 4vw, 44px)/1.05 var(--display); letter-spacing: -.02em; margin: 28px 0 6px; }
+    .sub { margin: 0 0 24px; color: var(--ink-soft); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1.5px solid var(--floss); border-radius: var(--r-lg); background: var(--paper); margin-bottom: 22px; }
+    .stat { padding: 18px 20px; border-left: 1.5px solid var(--floss); }
+    .stat:first-child { border-left: 0; }
+    .stat b { display: block; font: 800 34px/1 var(--display); }
+    .stat span { font-size: 14px; color: var(--ink-soft); }
+    .stat--alert b { color: var(--alert); }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filters .chip[aria-pressed="true"] { background: var(--sea); color: #fff; }
+    .leads { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .lead { background: var(--paper); border: 1.5px solid var(--floss); border-radius: var(--r-sm); }
+    .lead--urgent { border-left: 6px solid var(--alert); }
+    .lead--cancelled { opacity: .55; }
+    .lead summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1.3fr 1fr 1.1fr auto; gap: 16px; align-items: center; padding: 16px 20px; }
+    .lead summary::-webkit-details-marker { display: none; }
+    .lead__name { font: 700 18px/1.2 var(--display); margin: 0; }
+    .lead__meta { margin: 2px 0 0; font-size: 14px; color: var(--ink-soft); }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--enamel); border: 1px solid var(--floss); margin: 2px 4px 2px 0; }
+    .tag--hot { background: #FFE9D6; border-color: #F5C49B; color: #8A4413; }
+    .tag--warm { background: #FFF6CC; border-color: #EBD77A; color: #6B5A07; }
+    .tag--cold { background: #E3EEF9; border-color: #B5CDE8; color: #2A4E77; }
+    .tag--high { background: var(--alert-soft); border-color: #F0B3BE; color: var(--alert); }
+    .lead__body { padding: 0 20px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; border-top: 1px dashed var(--floss); padding-top: 16px; }
+    .lead__body h2 { font: 700 15px/1.2 var(--display); margin: 0 0 8px; }
+    .lead__body p { margin: 0 0 8px; }
+    .tx { max-height: 320px; overflow-y: auto; font-size: 14px; display: grid; gap: 6px; }
+    .tx p { margin: 0; padding: 6px 10px; border-radius: 10px; background: var(--enamel); }
+    .tx .u { background: var(--mint); justify-self: end; max-width: 85%; }
+    .empty, .gate { background: var(--paper); border: 1.5px dashed var(--floss); border-radius: var(--r-lg); padding: 40px; text-align: center; }
+    .gate form { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .gate input { padding: 10px 16px; border-radius: 999px; border: 1.5px solid var(--floss); min-width: 220px; }
+    .gate button { padding: 10px 20px; border-radius: 999px; border: 0; background: var(--sea); color: #fff; font-weight: 700; }
+    .err { color: var(--alert); }
+    @media (max-width: 760px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat:nth-child(3) { border-left: 0; }
+      .stat:nth-child(n+3) { border-top: 1.5px solid var(--floss); }
+      .lead summary { grid-template-columns: 1fr; gap: 6px; }
+      .lead__body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dash">
+    <div class="dash__top">
+      <a class="brand" href="/">
+        <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6c-9 0-14 7-14 16 0 8 4 13 6 20 2 8 3 16 8 16 5 0 5-12 9-12h10c4 0 4 12 9 12s6-8 8-16c2-7 6-12 6-20C60 13 55 6 46 6c-6 0-9 3-14 3S24 6 18 6z"/></svg>
+        <span>BrightSmile<br>Front desk</span>
+      </a>
+      <a class="back" href="/">Open patient chat</a>
+    </div>
+    <h1>Appointments booked by Aria</h1>
+    <p class="sub">Every booking comes with an AI summary, so the team knows who to call first.</p>
+    <div id="root"></div>
+  </div>
+
+<script>
+"use strict";
+const root = document.getElementById("root");
+const purposeLabel = { toothache: "Tooth pain", cleaning: "Cleaning", checkup: "Check-up", cosmetic: "Cosmetic", braces: "Braces", implant: "Implants", kids: "Child's visit", other: "Other" };
+let all = [], filter = "all";
+
+function el(tag, props = {}, ...kids) { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; }
+function tok() { try { return sessionStorage.getItem("adminToken"); } catch { return null; } }
+
+function gate(msg) {
+  const inp = el("input", { type: "password", placeholder: "Staff access code", required: true, ariaLabel: "Staff access code" });
+  const form = el("form", {}, inp, el("button", { type: "submit", textContent: "Open dashboard" }));
+  form.addEventListener("submit", (e) => { e.preventDefault(); try { sessionStorage.setItem("adminToken", inp.value); } catch {} load(inp.value); });
+  root.replaceChildren(el("div", { className: "gate" },
+    el("p", { textContent: "Enter the staff access code to see patient bookings. The demo code is “demo”." }),
+    msg ? el("p", { className: "err", textContent: msg }) : "", form));
+  inp.focus();
+}
+
+async function load(t = tok()) {
+  if (!t) return gate();
+  const r = await fetch("/api/leads", { headers: { "x-admin-token": t } });
+  if (r.status === 401) return gate("That access code didn't work. Check it and try again.");
+  all = (await r.json()).leads;
+  render();
+}
+
+function render() {
+  const live = all.filter((l) => l.status === "confirmed");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const stats = [
+    [live.length, "Upcoming bookings"],
+    [live.filter((l) => l.urgent).length, "Urgent cases", true],
+    [live.filter((l) => l.summary?.lead_score === "hot").length, "High-value leads"],
+    [all.filter((l) => l.created_at.slice(0, 10) === today).length, "Booked today"],
+  ];
+  const statsEl = el("div", { className: "stats" }, ...stats.map(([n, label, alert]) =>
+    el("div", { className: "stat" + (alert && n ? " stat--alert" : "") }, el("b", { textContent: n }), el("span", { textContent: label }))));
+
+  const filters = el("div", { className: "filters", role: "group", ariaLabel: "Filter bookings" },
+    ...[["all", "All"], ["urgent", "Urgent"], ["hot", "High-value"], ["cancelled", "Cancelled"]].map(([k, label]) => {
+      const b = el("button", { type: "button", className: "chip", textContent: label });
+      b.setAttribute("aria-pressed", String(filter === k));
+      b.addEventListener("click", () => { filter = k; render(); });
+      return b;
+    }),
+    (() => { const b = el("button", { type: "button", className: "chip", textContent: "Refresh" }); b.addEventListener("click", () => load()); return b; })());
+
+  const rows = all.filter((l) => filter === "all" ? true : filter === "urgent" ? l.urgent && l.status === "confirmed"
+    : filter === "hot" ? l.summary?.lead_score === "hot" : l.status === "cancelled");
+
+  const list = rows.length ? el("ul", { className: "leads" }, ...rows.map(row)) :
+    el("div", { className: "empty" }, el("p", { textContent: all.length ? "No bookings match this filter." : "No bookings yet. Book one from the patient chat and it shows up here." }));
+  root.replaceChildren(statsEl, filters, list);
+}
+
+function row(l) {
+  const s = l.summary || {};
+  const when = new Date(l.slot).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  const tags = el("div", {},
+    s.lead_score ? el("span", { className: `tag tag--${s.lead_score}`, textContent: { hot: "High value", warm: "Warm", cold: "Browsing" }[s.lead_score] }) : "",
+    s.urgency === "high" || l.urgent ? el("span", { className: "tag tag--high", textContent: "Urgent" }) : "",
+    s.sentiment ? el("span", { className: "tag", textContent: s.sentiment[0].toUpperCase() + s.sentiment.slice(1) }) : "",
+    l.status === "cancelled" ? el("span", { className: "tag", textContent: "Cancelled" }) : "");
+  const sum = el("summary", {},
+    el("div", {}, el("p", { className: "lead__name", textContent: l.name }), el("p", { className: "lead__meta", textContent: `${l.ref} · ${purposeLabel[l.purpose] || l.purpose}` })),
+    el("div", {}, el("p", { className: "lead__name", textContent: when }), el("p", { className: "lead__meta", textContent: l.phone })),
+    tags,
+    el("span", { className: "lead__meta", textContent: l.ai ? "AI summary" : "Rule summary" }));
+  const tx = el("div", { className: "tx" }, ...(l.transcript || []).map((t) => el("p", { className: t.role === "user" ? "u" : "", textContent: t.text })));
+  const details = Object.entries(l.details || {}).map(([k, v]) => `${k.replace("_", " ")}: ${v === true ? "yes" : v === false ? "no" : v}`).join(", ");
+  const body = el("div", { className: "lead__body" },
+    el("div", {},
+      el("h2", { textContent: "Summary" }), el("p", { textContent: s.summary || "" }),
+      el("h2", { textContent: "Next step" }), el("p", { textContent: s.next_action || "" }),
+      el("h2", { textContent: "Contact" }), el("p", { textContent: `${l.phone}, ${l.email}` }),
+      details ? el("p", { className: "lead__meta", textContent: details }) : ""),
+    el("div", {}, el("h2", { textContent: "Conversation" }), tx));
+  return el("li", { className: `lead${l.urgent ? " lead--urgent" : ""}${l.status === "cancelled" ? " lead--cancelled" : ""}` }, el("details", {}, sum, body));
+}
+
+load();
+</script>
+</body>
+</html>
