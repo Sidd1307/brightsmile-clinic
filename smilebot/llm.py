@@ -128,8 +128,8 @@ class GroqLLM:
 
     async def summarize(self, transcript: list[dict], lead: dict) -> dict:
         text = "\n".join(f"{t['role']}: {t['text']}" for t in transcript)
-        out = json.loads(await self._chat(self.summary_model, SUMMARY_SYS, f"LEAD: {json.dumps(lead)}\nTRANSCRIPT:\n{text}",
-                                          json_mode=True, max_tokens=300))
+        out = json.loads(await self._chat_any(SUMMARY_SYS, f"LEAD: {json.dumps(lead)}\nTRANSCRIPT:\n{text}",
+                                              max_tokens=300, temp=0.0, first=self.summary_model, json_mode=True))
         allowed = {"sentiment": {"positive", "neutral", "anxious", "frustrated"}, "lead_score": {"hot", "warm", "cold"},
                    "urgency": {"low", "medium", "high"}}
         for k, ok in allowed.items():
