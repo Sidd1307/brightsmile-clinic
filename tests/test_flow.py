@@ -285,3 +285,32 @@ async def test_progress_step_and_slot_chip_flag():
     assert steps[0] == 0 and steps == sorted(steps) and steps[-2] == 3 and steps[-1] == 4
     st2, rs2 = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "cleaning", "never"])
     assert rs2[-1].slot_chips and rs2[-1].step == 2 and not rs2[1].slot_chips
+
+
+class _StickyIntentLLM:
+    """Mimics the live bug: the LLM keeps returning intent=reschedule and the known phone on every turn."""
+    async def extract(self, msg, st, now): return {"intent": "reschedule", "phone": "9876543210"}
+    async def phrase(self, st, notes, answer, question, user_q=None): raise RuntimeError("use template")
+    async def react(self, st, user_q=None): return ""
+    async def summarize(self, transcript, lead): return None
+
+
+async def test_reschedule_completes_even_if_llm_keeps_saying_reschedule():
+    sched = MemoryScheduler()
+    st, _ = await chat(["Priya Sharma", "9876543210", "priya@example.com", "checkup", "never", "tomorrow 11am", "yes"],
+                       deps(sched))
+    old = st["booking"]["ref"]
+    d = flow.Deps(scheduler=sched, llm=_StickyIntentLLM(), now=lambda: NOW)
+    _, rs = await chat(["reschedule please", "9876543210", "thursday at 3pm", "yes"], d, st)
+    assert st["stage"] == "done" and st["booking"]["ref"] != old, [r.text for r in rs]
+    assert sched.bookings[old]["status"] == "cancelled"
+
+
+async def test_verification_needs_the_number_typed_now_not_an_llm_guess():
+    sched = MemoryScheduler()
+    st, _ = await chat(["Priya Sharma", "9876543210", "priya@example.com", "checkup", "never", "tomorrow 11am", "yes"],
+                       deps(sched))
+    ref = st["booking"]["ref"]
+    d = flow.Deps(scheduler=sched, llm=_StickyIntentLLM(), now=lambda: NOW)
+    _, rs = await chat([f"cancel {ref}", "it's the usual one"], d)
+    assert "confirm the mobile number" in rs[-1].text and sched.bookings[ref]["status"] == "confirmed"

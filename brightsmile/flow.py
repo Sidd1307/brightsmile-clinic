@@ -83,6 +83,10 @@ def _is_question(msg: str) -> bool:
 
 
 FIELD_LABELS = {"name": "Name", "phone": "Phone", "email": "Email", "purpose": "Reason", "slot": "Date & time"}
+_RESCHEDULE_WORDS = re.compile(
+    r"(?i)\b(reschedule|re-schedule|move my|change my (appointment|booking|slot)|different (time|day|date)|"
+    r"can'?t make it|cannot make it|postpone|prepone)\b")
+_MANAGE_WORDS = re.compile(r"(?i)\bcancel\b|" + _RESCHEDULE_WORDS.pattern[4:])
 _REF_RE = re.compile(r"\bBSD-?([A-Z2-9]{5})\b", re.I)
 _WORD_NUM = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen".split())}
 
@@ -145,7 +149,7 @@ def rule_extract(msg: str, st: dict, now: datetime) -> dict:
     }
     t = msg.lower()
     ex["intent"] = ("cancel" if re.search(r"\bcancel\b", t) else
-                    "reschedule" if re.search(r"\b(reschedule|move my|change my (appointment|booking))\b", t) else None)
+                    "reschedule" if _RESCHEDULE_WORDS.search(t) else None)
     if exp == "pain_level":
         # words / chip ranges first ("Severe (7–10)" must not read as 7), then a bare number
         n = 8 if re.search(r"severe|unbearable|terrible|very bad|worst|7\s*[–-]\s*10", t) else \
@@ -384,6 +388,10 @@ async def _turn(st: dict, msg: str, deps: Deps, now: datetime) -> Reply:
         return Reply(f"I didn't receive anything — {q[0].lower()}{q[1:]}", chips=chips or _chips_for(st))
 
     ex, used_ai = await extract(msg, st, deps, now)
+    # Changing an existing booking is only honoured when THIS message asks for it (keyword or booking ref),
+    # never inferred from earlier context, and never while a reschedule is already under way.
+    if ex.get("intent") and (st.get("rescheduling") or not (_MANAGE_WORDS.search(msg) or _REF_RE.search(msg))):
+        ex["intent"] = None
     if st["stage"] == "done" or (ex.get("intent") and st["stage"] != "manage"):
         if ex.get("intent") or st["stage"] in ("done",):
             r = await _post_booking(st, ex, msg, deps, now)
@@ -723,7 +731,7 @@ async def _manage(st: dict, ex: dict, msg: str, deps: Deps, now: datetime) -> Re
         m["ref"] = None
         return Reply("I couldn't find an active booking with that reference. Could you double-check it?")
     if not m["verified"]:
-        phone = ex.get("phone")
+        phone = V.extract_phone(msg)  # only digits the person typed now, never an LLM guess from earlier context
         if not phone:
             return Reply("For security, please confirm the mobile number used for that booking.")
         if phone != booking["phone"]:
