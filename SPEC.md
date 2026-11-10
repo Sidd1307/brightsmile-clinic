@@ -37,7 +37,7 @@ Mon–Sat 09:00–18:00 (lunch 13:00–14:00 closed), Sunday closed, 30-min slot
 
 ## Stack
 FastAPI (async) · httpx · Groq API · Google Calendar API (service account) · SQLite locally / Postgres (`DATABASE_URL`) in prod ·
-vanilla HTML/CSS/JS frontend in `public/` · pytest · Vercel.
+vanilla HTML/CSS/JS frontend in `web/` · pytest · Vercel.
 
 ## Concurrency
 - All I/O is async (`httpx.AsyncClient`); independent calls run with `asyncio.gather` (e.g. AI summary + calendar insert at booking).

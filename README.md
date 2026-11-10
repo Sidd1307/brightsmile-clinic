@@ -67,7 +67,7 @@ python scripts/ui_smoke.py http://127.0.0.1:8000   # real browser: full booking 
 
 ## Deploy (Vercel)
 
-1. `vercel` (FastAPI is detected automatically from `app.py`; `public/` is served as static files).
+1. `vercel` (FastAPI is detected automatically from `app.py`; the frontend in `web/` is served by FastAPI).
 2. Set the environment variables from `.env.example`. Use **Postgres** for `DATABASE_URL` (e.g. Neon's free tier via the Vercel Marketplace), because Vercel's filesystem is temporary.
 3. Google Calendar: create a service account → share a test calendar with its email ("Make changes to events") → set `GOOGLE_SERVICE_ACCOUNT_JSON` and `GOOGLE_CALENDAR_ID`.
 

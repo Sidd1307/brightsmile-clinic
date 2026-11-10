@@ -29,7 +29,7 @@ from smilebot.store import Db, DbScheduler, Store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 log = logging.getLogger("smilebot.api")
-PUBLIC = Path(__file__).parent / "public"
+WEB = Path(__file__).parent / "web"  # bundled with the function (Vercel serves public/ from its CDN only)
 
 
 def build_deps() -> flow.Deps:
@@ -132,13 +132,13 @@ async def unhandled(request: Request, exc: Exception):
 
 @app.get("/", include_in_schema=False)
 async def index():
-    return FileResponse(PUBLIC / "index.html")
+    return FileResponse(WEB / "index.html")
 
 
 @app.get("/dashboard", include_in_schema=False)
 async def dashboard():
-    return FileResponse(PUBLIC / "dashboard.html")
+    return FileResponse(WEB / "dashboard.html")
 
 
-if PUBLIC.exists():
-    app.mount("/", StaticFiles(directory=PUBLIC), name="static")
+if WEB.exists():
+    app.mount("/", StaticFiles(directory=WEB, html=True), name="static")
