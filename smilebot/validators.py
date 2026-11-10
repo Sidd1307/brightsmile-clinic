@@ -116,11 +116,13 @@ def email_typo_suggestion(email: str) -> str | None:
 
 # ---------- purpose ----------
 PURPOSES = {
-    "toothache": ["pain", "ache", "hurt", "toothache", "swelling", "swollen", "bleeding", "broken", "cracked", "chipped",
+    "toothache": ["pain", "ache", "hurt", "toothache", "swelling", "swollen", "bleed", "gum", "broken", "cracked", "chipped",
                   "emergency", "sensitive", "sensitivity", "infection", "abscess", "wisdom", "root canal"],
     "cleaning": ["clean", "scaling", "polish", "stain", "plaque", "tartar"],
-    "checkup": ["check", "checkup", "check-up", "routine", "exam", "consult", "general", "x-ray", "xray"],
-    "cosmetic": ["whiten", "whitening", "veneer", "smile", "cosmetic", "bonding", "yellow"],
+    "checkup": ["check", "checkup", "check-up", "routine", "exam", "consult", "general", "x-ray", "xray",
+                "tongue", "breath", "mouth", "ulcer", "jaw", "taste"],
+    "cosmetic": ["whiten", "whitening", "veneer", "smile", "cosmetic", "bonding", "yellow teeth", "teeth are yellow",
+                 "teeth look yellow", "stained teeth", "discolo"],
     "braces": ["brace", "aligner", "invisalign", "crooked", "straighten", "orthodont"],
     "implant": ["implant", "missing tooth", "missing teeth", "denture", "crown", "bridge", "replace"],
     "kids": ["kid", "child", "son", "daughter", "baby", "toddler", "children", "pediatric", "paediatric"],

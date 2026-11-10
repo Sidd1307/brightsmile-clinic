@@ -61,6 +61,16 @@ PURPOSE_ACK = {
     "cosmetic": "Great, we can definitely help with your smile.",
     "braces": "Sure, our orthodontist can help with that.",
 }
+GENERIC_ACKS = set(PURPOSE_ACK.values()) | {"Sure, I can help with that."}
+_QUESTION_START = re.compile(r"^(is|are|can|could|should|why|what|how|do|does|will|would|when|where|who)\b", re.I)
+
+
+def _is_question(msg: str) -> bool:
+    if len(re.findall(r"[A-Za-z]{2,}", msg)) < 2:  # "?!" alone is noise, not a question
+        return False
+    return "?" in msg or bool(_QUESTION_START.match(msg.strip()))
+
+
 FIELD_LABELS = {"name": "Name", "phone": "Phone", "email": "Email", "purpose": "Reason", "slot": "Date & time"}
 _REF_RE = re.compile(r"\bBSD-?([A-Z2-9]{5})\b", re.I)
 _WORD_NUM = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen".split())}
@@ -208,6 +218,7 @@ def _card(st: dict) -> dict:
     for k in ("treatment", "last_visit", "notes"):
         if k in d: det.append(str(d[k]))
     if "child_age" in d: det.append(f"Child aged {d['child_age']}")
+    if "concern" in d and d["concern"] not in det: det.append(f"“{d['concern']}”")
     return {
         "name": s.get("name"), "phone": s.get("phone"), "email": s.get("email"),
         "purpose": V.PURPOSE_LABELS.get(s.get("purpose", ""), ""), "details": det,
@@ -363,6 +374,18 @@ async def _turn(st: dict, msg: str, deps: Deps, now: datetime) -> Reply:
     if notes and notes[0] == "Great, email saved.":
         captured.add("email")
     exp = st["expecting"]
+
+    # --- free-text concerns and questions we can't answer from clinic facts ---
+    if "purpose" in captured and len(msg.split()) >= 3:
+        st["details"]["concern"] = msg[:200]  # keep the patient's own words for the dentist
+    if _is_question(msg) and not answer and not user_q:
+        if "purpose" in captured:
+            notes[:] = [n for n in notes if n not in GENERIC_ACKS]
+            notes.insert(0, "That's one for the dentist. I can't diagnose over chat, but I've noted it so they "
+                            "can take a proper look at your visit.")
+        else:
+            notes.insert(0, "Good question. I don't have that answer here, but the team can help when you visit.")
+        user_q = msg  # a question is not a failed answer, so don't show a field error
 
     # --- errors on the field we asked for ---
     if exp and exp not in captured and not answer and not user_q:

@@ -52,7 +52,7 @@ flowchart LR
 python -m venv .venv && .venv/Scripts/activate      # macOS/Linux: source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env                                # add GROQ_API_KEY for AI mode (optional)
-uvicorn app:app --reload
+python -m uvicorn app:app --reload        # "python -m" also works where Windows blocks pip-installed .exe launchers
 ```
 Open http://127.0.0.1:8000. Voice calls need Chrome, Edge or Safari.
 

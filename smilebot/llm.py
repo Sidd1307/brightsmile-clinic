@@ -33,6 +33,8 @@ Rewrite the receptionist's planned turn as ONE natural message. Rules:
 - Keep every fact, number, date, time and email exactly as given. Never invent times, prices, doctors or policies.
 - If PATIENT_QUESTION is present and ANSWER is empty, answer it ONLY from CLINIC_FACTS; if the facts don't cover it,
   say the team will confirm when they call.
+- Never diagnose, guess causes, or give medical advice about symptoms; say the dentist will check at the visit.
+  If the patient describes severe pain, swelling, fever or trouble breathing/swallowing, keep the urgent tone.
 - Keep it under 3 short sentences (it may be spoken aloud). No lists, no markdown, at most one emoji.
 - End with the NEXT_QUESTION (same meaning) if one is given. Never say the appointment is booked/confirmed.
 Output only the message text."""

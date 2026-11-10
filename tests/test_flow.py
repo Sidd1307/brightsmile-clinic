@@ -85,6 +85,24 @@ async def test_question_during_slot_answers_first_without_repeating_urgent():
     assert rs[-1].text.startswith("We're at") and "urgent" not in rs[-1].text and len(rs[-1].chips) == 3
 
 
+async def test_symptom_question_is_not_misread_as_cosmetic():
+    st, rs = await chat(["I have yellow tongue ?"])
+    r = rs[-1].text
+    assert st["slots"]["purpose"] == "checkup" and "smile" not in r
+    assert "can't diagnose" in r and "name" in r and "didn't quite catch" not in r
+    assert st["details"]["concern"] == "I have yellow tongue ?"
+
+
+async def test_unknown_question_is_not_a_name_error():
+    st, rs = await chat(["do you sell toothpaste?"])
+    assert "Good question" in rs[-1].text and "didn't quite catch" not in rs[-1].text and st["expecting"] == "name"
+
+
+async def test_yellow_teeth_is_still_cosmetic():
+    st, _ = await chat(["my teeth look yellow"])
+    assert st["slots"]["purpose"] == "cosmetic"
+
+
 async def test_pain_chip_range_maps_to_band_not_first_digit():
     st, _ = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "toothache", "Severe (7–10)"])
     assert st["details"]["pain_level"] == 8 and st["urgent"] is True
@@ -180,3 +198,13 @@ def test_state_signing_rejects_tampering():
     body, mac = token.rsplit(".", 1)
     with pytest.raises(BadState):
         verify(body[:-2] + "AA." + mac)
+
+
+async def test_gum_bleeding_question_gets_no_diagnosis_and_purpose():
+    st, rs = await chat(["why do my gums bleed?"])
+    assert st["slots"]["purpose"] == "toothache" and "can't diagnose" in rs[-1].text
+
+
+async def test_location_faq_near_metro():
+    st, rs = await chat(["is the clinic near the metro?"])
+    assert "Lakeview Road" in rs[-1].text

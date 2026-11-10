@@ -26,7 +26,7 @@ FACTS = {
 }
 _FAQ_KEYS = {
     "hours": ["hour", "open", "close", "timing", "sunday", "weekend"],
-    "location": ["where", "address", "location", "located", "parking", "directions", "reach you"],
+    "location": ["where", "address", "location", "located", "parking", "directions", "reach you", "near", "metro", "landmark", "how do i get"],
     "fees": ["cost", "fee", "price", "charge", "how much", "expensive", "rate"],
     "insurance": ["insurance", "emi", "claim"],
     "doctors": ["doctor", "dentist", "dr.", "dr ", "who will"],
