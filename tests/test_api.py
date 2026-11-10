@@ -7,11 +7,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from smilebot import clinic as C
-from smilebot import flow
-from smilebot.llm import GroqLLM
-from smilebot.state import new_state
-from smilebot.store import Db, DbScheduler, Store
+from brightsmile import clinic as C
+from brightsmile import flow
+from brightsmile.llm import GroqLLM
+from brightsmile.state import new_state
+from brightsmile.store import Db, DbScheduler, Store
 
 NOW = datetime(2026, 11, 9, 10, 0, tzinfo=C.TZ)
 
@@ -96,7 +96,7 @@ def groq_mock(extract: dict, phrase: str = "AI reply?", fail: bool = False):
 async def test_llm_extraction_is_validated_not_trusted():
     llm = groq_mock({"name": "Rahul Sharma", "phone": "12", "email": "not-an-email", "purpose": "spaceship",
                      "date": "2026-11-10", "time": "16:00"})
-    d = flow.Deps(scheduler=__import__("smilebot.booking", fromlist=["x"]).MemoryScheduler(), llm=llm, now=lambda: NOW)
+    d = flow.Deps(scheduler=__import__("brightsmile.booking", fromlist=["x"]).MemoryScheduler(), llm=llm, now=lambda: NOW)
     st = new_state()
     await flow.turn(st, "", d)
     r = await flow.turn(st, "hey it's rahul, call me on 12, mail not-an-email, tue 4", d)
@@ -106,7 +106,7 @@ async def test_llm_extraction_is_validated_not_trusted():
 
 async def test_llm_outage_falls_back_to_rules():
     llm = groq_mock({}, fail=True)
-    d = flow.Deps(scheduler=__import__("smilebot.booking", fromlist=["x"]).MemoryScheduler(), llm=llm, now=lambda: NOW)
+    d = flow.Deps(scheduler=__import__("brightsmile.booking", fromlist=["x"]).MemoryScheduler(), llm=llm, now=lambda: NOW)
     st = new_state()
     await flow.turn(st, "", d)
     r = await flow.turn(st, "Priya Sharma", d)

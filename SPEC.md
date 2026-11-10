@@ -1,4 +1,4 @@
-# SmileBot — AI receptionist for BrightSmile Dental Clinic
+# BrightSmile Clinic — AI receptionist (Aria)
 
 ## Objective
 An inbound enquiry + appointment-booking assistant (chat **and** voice "call" mode) for a dental clinic.

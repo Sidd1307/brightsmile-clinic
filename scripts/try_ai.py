@@ -12,10 +12,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
-from smilebot import flow  # noqa: E402
-from smilebot.booking import MemoryScheduler  # noqa: E402
-from smilebot.llm import GroqLLM  # noqa: E402
-from smilebot.state import new_state  # noqa: E402
+from brightsmile import flow  # noqa: E402
+from brightsmile.booking import MemoryScheduler  # noqa: E402
+from brightsmile.llm import GroqLLM  # noqa: E402
+from brightsmile.state import new_state  # noqa: E402
 
 CONVOS = [
     ["hi, how are you?", "I have yellow tongue, is that normal?", "it's Siddharth Rao",

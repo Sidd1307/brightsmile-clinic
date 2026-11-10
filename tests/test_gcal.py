@@ -6,10 +6,10 @@ from datetime import datetime
 import httpx
 import pytest
 
-from smilebot import clinic as C
-from smilebot.booking import SlotTaken
-from smilebot.gcal import GoogleCalendar, patient_links
-from smilebot.store import Db, DbScheduler
+from brightsmile import clinic as C
+from brightsmile.booking import SlotTaken
+from brightsmile.gcal import GoogleCalendar, patient_links
+from brightsmile.store import Db, DbScheduler
 
 
 class _Creds:
@@ -68,4 +68,4 @@ async def test_slot_blocked_in_calendar_is_refused(db):
 def test_patient_links():
     l = patient_links(datetime(2026, 11, 10, 16, tzinfo=C.TZ), "BSD-ABCDE", "Dr. Meera Rao")
     assert "dates=20261110T103000Z/20261110T110000Z" in l["google"]
-    assert "DTSTART:20261110T103000Z" in l["ics"] and "UID:BSD-ABCDE@smilebot" in l["ics"]
+    assert "DTSTART:20261110T103000Z" in l["ics"] and "UID:BSD-ABCDE@brightsmile" in l["ics"]

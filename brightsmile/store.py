@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from . import clinic as C
 from .booking import SlotTaken, new_ref
 
-log = logging.getLogger("smilebot.store")
+log = logging.getLogger("brightsmile.store")
 
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS bookings (
@@ -33,7 +33,7 @@ class Db:
     def __init__(self, url: str | None = None):
         self.url = url or os.environ.get("DATABASE_URL")
         self.kind = "postgres" if self.url and self.url.startswith("postgres") else "sqlite"
-        default = "/tmp/smilebot.db" if os.environ.get("VERCEL") else "smilebot.db"
+        default = "/tmp/brightsmile.db" if os.environ.get("VERCEL") else "brightsmile.db"
         self.path = os.environ.get("SQLITE_PATH", default)
         self._ready = False
         self._init_lock = threading.Lock()

@@ -17,7 +17,7 @@ from . import clinic as C
 from . import validators as V
 from .booking import Scheduler, SlotTaken
 
-log = logging.getLogger("smilebot.flow")
+log = logging.getLogger("brightsmile.flow")
 
 CONTACT = ["name", "phone", "email", "purpose"]
 FOLLOWUPS = {
@@ -96,13 +96,28 @@ class Reply:
     urgent: bool = False
     booking: dict | None = None
     used_ai: bool = False
+    step: int = 0          # booking progress for the UI: 0 details, 1 reason, 2 time, 3 confirm, 4 booked
+    slot_chips: bool = False  # chips are appointment times (rendered as time cards)
+
+
+def progress_step(st: dict) -> int:
+    s = st["slots"]
+    if st["stage"] == "done":
+        return 4
+    if st["stage"] == "confirm":
+        return 3
+    if not all(k in s for k in ("name", "phone", "email")):
+        return 0
+    if "purpose" not in s or any(f not in st["details"] for f in FOLLOWUPS.get(s["purpose"], [])):
+        return 1
+    return 2
 
 
 @dataclass
 class Deps:
     scheduler: Scheduler
-    llm: Any | None = None          # smilebot.llm.GroqLLM or None
-    store: Any | None = None        # smilebot.store.Store or None
+    llm: Any | None = None          # brightsmile.llm.GroqLLM or None
+    store: Any | None = None        # brightsmile.store.Store or None
     now: Callable[[], datetime] = C.now
 
 
@@ -344,6 +359,9 @@ async def turn(st: dict, msg: str, deps: Deps) -> Reply:
     st["transcript"].append({"role": "bot", "text": reply.text})
     st["transcript"] = st["transcript"][-60:]
     reply.stage, reply.urgent = st["stage"], st["urgent"]
+    reply.step = progress_step(st)
+    offered = {C.fmt_slot(datetime.fromisoformat(o)) for o in st["offered"]}
+    reply.slot_chips = bool(reply.chips) and all(c in offered for c in reply.chips)
     return reply
 
 
@@ -601,7 +619,9 @@ async def _respond(st, deps, notes, answer, question, chips, used_ai, user_q=Non
     text = fallback
     if deps.llm:
         try:
-            if critical:
+            if critical and any(n.startswith("That sounds really uncomfortable") for n in notes):
+                pass  # the urgent note already carries the empathy; a second apology reads robotic
+            elif critical:
                 lead = await deps.llm.react(st, user_q)
                 if lead and not re.search(r"\d", lead) and not _PROMISE.search(lead) and "?" not in lead:
                     text, used_ai = f"{lead} {template}", True

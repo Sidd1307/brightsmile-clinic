@@ -87,7 +87,7 @@ svg { fill: currentColor; }
 /* ---------- chat ---------- */
 .chat {
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto auto 1fr auto auto;
   min-height: 0;
   max-width: 760px;
   width: 100%;
@@ -115,8 +115,35 @@ svg { fill: currentColor; }
 }
 .ghost:hover { border-color: var(--sea); color: var(--sea); }
 
+/* booking progress: a real sequence, so it earns its markers */
+.steps {
+  list-style: none; margin: 0; padding: 12px 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  border-bottom: 1px solid var(--floss);
+  font-size: 13px; color: var(--ink-soft);
+}
+.steps li { display: flex; align-items: center; gap: 8px; position: relative; padding-top: 10px; }
+.steps li::before {  /* the track segment above each step */
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 4px;
+  background: var(--floss); transition: background .3s ease;
+}
+.steps__dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 2px solid var(--floss); background: var(--paper);
+  display: grid; place-items: center;
+}
+.steps li[data-state="done"]::before, .steps li[data-state="current"]::before { background: var(--sea); }
+.steps li[data-state="current"] { color: var(--ink); font-weight: 700; }
+.steps li[data-state="current"] .steps__dot { border-color: var(--sea); background: var(--mint); }
+.steps li[data-state="done"] { color: var(--sea-deep); }
+.steps li[data-state="done"] .steps__dot { border-color: var(--sea); background: var(--sea); }
+.steps li[data-state="done"] .steps__dot::after {  /* check mark, so state isn't colour-only */
+  content: ""; width: 4px; height: 7px; margin-top: -2px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+
 .log {
-  list-style: none; margin: 0; padding: 24px 0 8px;
+  list-style: none; margin: 0; padding: 20px 0 8px;
   overflow-y: auto;
   display: flex; flex-direction: column; gap: 10px;
   scroll-behavior: smooth;
@@ -131,6 +158,9 @@ svg { fill: currentColor; }
 .msg--urgent .bubble { border-color: #F0B3BE; background: var(--alert-soft); }
 .msg--error .bubble { background: none; border: 1px dashed var(--alert); color: var(--alert); }
 .msg--new { animation: rise .22s ease-out; }
+.msg__meta { display: block; margin: 4px 6px 0; font-size: 12px; color: var(--ink-soft); }
+.msg--user .msg__meta { text-align: right; }
+.send:disabled { opacity: .55; cursor: progress; }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 
 .typing .bubble { display: flex; gap: 5px; padding: 16px 18px; }
@@ -148,6 +178,15 @@ svg { fill: currentColor; }
 }
 .chip:hover { background: var(--mint); }
 .chip--link { text-decoration: none; display: inline-flex; align-items: center; }
+/* appointment times: a small calendar card instead of a pill */
+.chip--slot {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center;
+  padding: 8px 14px 8px 10px; border-radius: var(--r-sm); text-align: left;
+}
+.chip--slot svg { grid-row: span 2; width: 20px; height: 20px; fill: var(--sea); }
+.chip--slot .chip__day { font: 400 13px/1.2 var(--body); color: var(--ink-soft); }
+.chip--slot .chip__time { font: 700 16px/1.2 var(--display); color: var(--ink); }
+.chip--slot:hover .chip__day { color: var(--ink); }
 
 .composer {
   display: flex; align-items: center; gap: 8px;
@@ -271,6 +310,11 @@ svg { fill: currentColor; }
   .chat { padding: 0 16px; }
   .msg { max-width: 88%; }
   .chat__status { font-size: 13px; }
+  .chat__head { padding: 14px 0 10px; }
+  .steps { gap: 6px; padding: 10px 0; font-size: 12px; }
+  .steps li { padding-top: 6px; white-space: nowrap; }
+  .steps__dot { display: none; }
+  .steps li:not([data-state="current"]) { font-size: 0; }  /* phones: track + current label only; others stay for screen readers via aria */
   .appt { grid-template-columns: 1fr 76px; --cut: 9px;
     -webkit-mask: radial-gradient(circle var(--cut) at calc(100% - 76px) 0, #0000 98%, #000) top / 100% 51% no-repeat,
                   radial-gradient(circle var(--cut) at calc(100% - 76px) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
@@ -278,6 +322,17 @@ svg { fill: currentColor; }
                   radial-gradient(circle var(--cut) at calc(100% - 76px) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat; }
   .appt__rows { grid-template-columns: 1fr; }
   .appt__when { font-size: 22px; }
+}
+
+@media (max-width: 400px) {
+  .desk { padding: 12px 16px; }
+  .call-btn__more { display: none; }
+  .call-btn { padding: 10px 14px; }
+  .chat__status { display: none; }
+  .msg { max-width: 92%; }
+  .msg--card { max-width: 100%; }
+  .composer { padding-left: 14px; gap: 4px; }
+  .mic, .send { width: 40px; height: 40px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

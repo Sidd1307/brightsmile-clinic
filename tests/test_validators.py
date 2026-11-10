@@ -2,8 +2,8 @@ from datetime import datetime, time, date
 
 import pytest
 
-from smilebot import validators as v
-from smilebot import clinic as c
+from brightsmile import validators as v
+from brightsmile import clinic as c
 
 NOW = datetime(2026, 11, 9, 10, 0, tzinfo=c.TZ)  # Monday
 

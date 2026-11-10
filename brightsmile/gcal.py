@@ -69,7 +69,7 @@ class GoogleCalendar:
         details = "\n".join(f"{k.replace('_', ' ')}: {v}" for k, v in lead["details"].items())
         body = {
             "summary": f"{'URGENT · ' if lead['urgent'] else ''}{lead['name']} ({lead['purpose']}) {ref}",
-            "description": f"Phone: {lead['phone']}\nEmail: {lead['email']}\n{details}\n\nBooked by SmileBot",
+            "description": f"Phone: {lead['phone']}\nEmail: {lead['email']}\n{details}\n\nBooked by Aria (BrightSmile Clinic)",
             "start": {"dateTime": slot.isoformat(), "timeZone": str(C.TZ)},
             "end": {"dateTime": (slot + timedelta(minutes=C.SLOT_MINUTES)).isoformat(), "timeZone": str(C.TZ)},
             "colorId": "11" if lead["urgent"] else "9",
@@ -91,7 +91,7 @@ def patient_links(slot: datetime, ref: str, doctor: str) -> dict:
     google = ("https://calendar.google.com/calendar/render?action=TEMPLATE"
               f"&text={quote(title)}&dates={_utc(slot)}/{_utc(end)}&details={quote(detail)}&location={quote(C.FACTS['location'])}")
     ics = "\r\n".join([
-        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SmileBot//EN", "BEGIN:VEVENT", f"UID:{ref}@smilebot",
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BrightSmile Clinic//EN", "BEGIN:VEVENT", f"UID:{ref}@brightsmile",
         f"DTSTAMP:{_utc(C.now())}", f"DTSTART:{_utc(slot)}", f"DTEND:{_utc(end)}", f"SUMMARY:{title}",
         f"DESCRIPTION:{detail}", "BEGIN:VALARM", "TRIGGER:-PT2H", "ACTION:DISPLAY", "DESCRIPTION:Dental appointment",
         "END:VALARM", "END:VEVENT", "END:VCALENDAR", ""])

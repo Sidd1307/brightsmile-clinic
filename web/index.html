@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BrightSmile Dental · Book an appointment</title>
-  <meta name="description" content="Chat or call Aria, BrightSmile Dental Clinic's virtual receptionist, to book an appointment.">
+  <title>BrightSmile Clinic · Book an appointment</title>
+  <meta name="description" content="Chat or call Aria, BrightSmile Clinic's virtual receptionist, to book an appointment.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path fill='%231E7F74' d='M18 6c-9 0-14 7-14 16 0 8 4 13 6 20 2 8 3 16 8 16 5 0 5-12 9-12h10c4 0 4 12 9 12s6-8 8-16c2-7 6-12 6-20C60 13 55 6 46 6c-6 0-9 3-14 3S24 6 18 6z'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
     <aside class="desk" aria-label="Clinic information">
       <a class="brand" href="/">
         <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6c-9 0-14 7-14 16 0 8 4 13 6 20 2 8 3 16 8 16 5 0 5-12 9-12h10c4 0 4 12 9 12s6-8 8-16c2-7 6-12 6-20C60 13 55 6 46 6c-6 0-9 3-14 3S24 6 18 6z"/></svg>
-        <span>BrightSmile<br>Dental Clinic</span>
+        <span>BrightSmile<br>Clinic</span>
       </a>
 
       <h1 class="desk__title">Book a visit in a two-minute chat.</h1>
@@ -24,7 +24,7 @@
 
       <button class="call-btn" id="callBtn" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
-        Call the clinic
+        <span>Call<span class="call-btn__more"> the clinic</span></span>
       </button>
       <p class="desk__hint" id="voiceHint"></p>
 
@@ -47,7 +47,14 @@
         <button class="ghost" id="restartBtn" type="button">New chat</button>
       </header>
 
-      <ol class="log" id="log" aria-live="polite" aria-relevant="additions"></ol>
+      <ol class="steps" id="steps" aria-label="Booking progress">
+        <li data-state="current" aria-current="step"><span class="steps__dot" aria-hidden="true"></span>Your details</li>
+        <li><span class="steps__dot" aria-hidden="true"></span>Reason</li>
+        <li><span class="steps__dot" aria-hidden="true"></span>Date &amp; time</li>
+        <li><span class="steps__dot" aria-hidden="true"></span>Confirm</li>
+      </ol>
+
+      <ol class="log" id="log" aria-live="polite" aria-relevant="additions" aria-label="Messages"></ol>
 
       <div class="chips" id="chips" role="group" aria-label="Suggested replies"></div>
 
@@ -66,7 +73,7 @@
 
   <section class="call" id="call" hidden aria-label="Voice call with Aria" role="dialog" aria-modal="true">
     <div class="call__top">
-      <p class="call__who">BrightSmile Dental, Aria</p>
+      <p class="call__who">BrightSmile Clinic, Aria</p>
       <p class="call__timer" id="callTimer">00:00</p>
     </div>
     <button class="orb" id="orb" type="button" aria-label="Interrupt Aria">
@@ -91,7 +98,7 @@
     <li class="msg msg--card">
       <article class="appt">
         <div class="appt__main">
-          <p class="appt__clinic">BrightSmile Dental Clinic</p>
+          <p class="appt__clinic">BrightSmile Clinic</p>
           <p class="appt__when" data-k="slot"></p>
           <p class="appt__doc" data-k="doctor"></p>
           <dl class="appt__rows">

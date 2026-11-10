@@ -20,15 +20,15 @@ from fastapi.responses import FileResponse, JSONResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
-from smilebot import clinic as C  # noqa: E402
-from smilebot import flow  # noqa: E402
-from smilebot.gcal import GoogleCalendar, patient_links  # noqa: E402
-from smilebot.llm import GroqLLM  # noqa: E402
-from smilebot.state import BadState, sign, verify  # noqa: E402
-from smilebot.store import Db, DbScheduler, Store  # noqa: E402
+from brightsmile import clinic as C  # noqa: E402
+from brightsmile import flow  # noqa: E402
+from brightsmile.gcal import GoogleCalendar, patient_links  # noqa: E402
+from brightsmile.llm import GroqLLM  # noqa: E402
+from brightsmile.state import BadState, sign, verify  # noqa: E402
+from brightsmile.store import Db, DbScheduler, Store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
-log = logging.getLogger("smilebot.api")
+log = logging.getLogger("brightsmile.api")
 WEB = Path(__file__).parent / "web"  # bundled with the function (Vercel serves public/ from its CDN only)
 
 
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SmileBot", lifespan=lifespan)
+app = FastAPI(title="BrightSmile Clinic", lifespan=lifespan)
 
 
 # --- tiny per-IP rate limit (best-effort per instance; use Redis/Upstash for a fleet) ---

@@ -1,6 +1,6 @@
-# SmileBot: AI receptionist for a dental clinic
+# BrightSmile Clinic: AI receptionist for a dental clinic
 
-Aria is the virtual receptionist for *BrightSmile Dental Clinic* (a fictional clinic). Patients can **chat** or **call** her. She greets them, collects their details, asks follow-up questions that fit their problem, flags emergencies, finds a free slot and books it into Google Calendar. The clinic team then sees every booking on a dashboard with an AI-written summary.
+Aria is the virtual receptionist for *BrightSmile Clinic* (a fictional clinic). Patients can **chat** or **call** her. She greets them, collects their details, asks follow-up questions that fit their problem, flags emergencies, finds a free slot and books it into Google Calendar. The clinic team then sees every booking on a dashboard with an AI-written summary.
 
 **Live demo:** https://smilebot-wine.vercel.app · **Staff dashboard:** https://smilebot-wine.vercel.app/dashboard.html (access code `demo`) · **Code:** https://github.com/Sidd1307/smilebot
 

@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("Asia/Kolkata")
-CLINIC_NAME = "BrightSmile Dental Clinic"
+CLINIC_NAME = "BrightSmile Clinic"
 OPEN, CLOSE = time(9, 0), time(18, 0)
 LUNCH = (time(13, 0), time(14, 0))
 SLOT_MINUTES = 30

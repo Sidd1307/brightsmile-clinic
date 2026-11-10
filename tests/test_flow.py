@@ -3,10 +3,10 @@ from datetime import datetime
 
 import pytest
 
-from smilebot import clinic as C
-from smilebot import flow
-from smilebot.booking import MemoryScheduler
-from smilebot.state import BadState, new_state, sign, verify
+from brightsmile import clinic as C
+from brightsmile import flow
+from brightsmile.booking import MemoryScheduler
+from brightsmile.state import BadState, new_state, sign, verify
 
 NOW = datetime(2026, 11, 9, 10, 0, tzinfo=C.TZ)  # Monday 10:00
 
@@ -226,7 +226,7 @@ def test_fast_path_skips_llm_for_button_taps_and_bare_values():
 
 
 def test_symptom_vs_general_question():
-    from smilebot.validators import is_symptom_question as s
+    from brightsmile.validators import is_symptom_question as s
     assert s("I have yellow tongue, is that normal?") and s("why do my gums bleed?")
     assert not s("does a checkup hurt?") and not s("how long does whitening last?")
 
@@ -277,3 +277,11 @@ async def test_question_during_scheduling_keeps_same_offered_slots():
     st, rs = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "cleaning", "never", "friday afternoon",
                          "how much is a cleaning?"])
     assert rs[-1].chips == rs[-2].chips and rs[-1].chips[0].startswith("Fri 13 Nov")
+
+
+async def test_progress_step_and_slot_chip_flag():
+    st, rs = await chat(["Priya Sharma", "9876543210", "priya@example.com", "checkup", "never", "tomorrow 11am", "yes"])
+    steps = [r.step for r in rs]
+    assert steps[0] == 0 and steps == sorted(steps) and steps[-2] == 3 and steps[-1] == 4
+    st2, rs2 = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "cleaning", "never"])
+    assert rs2[-1].slot_chips and rs2[-1].step == 2 and not rs2[1].slot_chips

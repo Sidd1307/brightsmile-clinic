@@ -1,8 +1,9 @@
 "use strict";
-/* SmileBot front end: chat + voice call. All bot text is inserted with textContent (no HTML injection). */
+/* BrightSmile Clinic front end: chat + voice call. All bot text is inserted with textContent (no HTML injection). */
 
 const $ = (s) => document.querySelector(s);
-const log = $("#log"), chipsEl = $("#chips"), input = $("#input");
+const log = $("#log"), chipsEl = $("#chips"), input = $("#input"), sendBtn = $("#composer .send");
+const finePointer = window.matchMedia("(pointer: fine)").matches;
 let token = null;       // HMAC-signed conversation state from the server
 let busy = false;
 let lastBot = "";
@@ -26,6 +27,8 @@ fetch("/api/health").then((r) => r.json()).then((h) => {
 /* ---------------- rendering ---------------- */
 function scrollDown() { log.scrollTop = log.scrollHeight; }
 
+const clock = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" });
+
 function addMsg(role, text, extra = "") {
   const li = document.createElement("li");
   li.className = `msg msg--${role} msg--new ${extra}`;
@@ -34,10 +37,37 @@ function addMsg(role, text, extra = "") {
   const p = document.createElement("p");
   p.textContent = text;
   b.append(p);
-  li.append(b);
+  const meta = document.createElement("span");
+  meta.className = "msg__meta";
+  meta.textContent = `${role === "user" ? "You" : "Aria"} · ${clock.format(new Date())}`;
+  li.append(b, meta);
   log.append(li);
   scrollDown();
   return li;
+}
+
+/* booking progress bar: 0 details, 1 reason, 2 time, 3 confirm, 4 booked */
+function renderSteps(step = 0) {
+  document.querySelectorAll("#steps li").forEach((li, i) => {
+    const state = i < step ? "done" : i === step ? "current" : "todo";
+    li.dataset.state = state;
+    if (state === "current") li.setAttribute("aria-current", "step");
+    else li.removeAttribute("aria-current");
+  });
+}
+
+const CAL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z"/></svg>';
+
+function slotChip(label) {
+  // label like "Tue 10 Nov, 2:00 PM": built from server text with textContent, icon is a static constant
+  const [day, time] = label.split(", ");
+  const b = Object.assign(document.createElement("button"), { type: "button", className: "chip chip--slot" });
+  b.innerHTML = CAL_ICON;
+  b.append(Object.assign(document.createElement("span"), { className: "chip__day", textContent: day }),
+           Object.assign(document.createElement("span"), { className: "chip__time", textContent: time || "" }));
+  b.setAttribute("aria-label", label);
+  b.addEventListener("click", () => send(label));
+  return b;
 }
 
 function addTyping() {
@@ -66,11 +96,21 @@ function addCard(card, confirmed) {
   scrollDown();
 }
 
-function renderChips(chips, links) {
+function renderChips(chips, links, slots = false) {
   chipsEl.replaceChildren();
   const callChips = $("#callChips");
   callChips.replaceChildren();
   lastChips = chips;
+  chipsEl.setAttribute("aria-label", slots ? "Available appointment times" : "Suggested replies");
+  if (slots) {
+    for (const label of chips) {
+      chipsEl.append(slotChip(label));
+      const b = Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: label });
+      b.addEventListener("click", () => send(label));
+      callChips.append(b);
+    }
+    return;
+  }
   for (const label of chips) {
     if (label === "Add to my calendar" && links) {
       const g = Object.assign(document.createElement("a"), { className: "chip chip--link", href: links.google, target: "_blank", rel: "noopener", textContent: "Add to Google Calendar" });
@@ -91,6 +131,8 @@ async function send(text, { silent = false } = {}) {
   if (busy) return;
   text = (text ?? "").trim();
   busy = true;
+  sendBtn.disabled = true;
+  log.setAttribute("aria-busy", "true");
   if (text && !silent) addMsg("user", text);
   chipsEl.replaceChildren();
   const typing = addTyping();
@@ -109,7 +151,8 @@ async function send(text, { silent = false } = {}) {
     lastBot = r.text;
     addMsg("bot", r.text, r.urgent && /urgent/i.test(r.text) ? "msg--urgent" : "");
     if (r.card) addCard(r.card, Boolean(r.booking));
-    renderChips(r.chips || [], data.links || r.links);
+    renderChips(r.chips || [], data.links || r.links, r.slot_chips);
+    renderSteps(r.step);
     requestAnimationFrame(scrollDown);
     if (Call.active) Call.say(r.text);
   } catch (err) {
@@ -121,6 +164,10 @@ async function send(text, { silent = false } = {}) {
     if (Call.active) Call.say("Sorry, I'm having trouble connecting. Please try again in a moment.");
   } finally {
     busy = false;
+    sendBtn.disabled = false;
+    log.removeAttribute("aria-busy");
+    // keep typing flow on desktop; on touch devices don't pop the keyboard up uninvited
+    if (!Call.active && finePointer && document.activeElement !== input && text) input.focus({ preventScroll: true });
   }
 }
 
@@ -135,6 +182,7 @@ $("#composer").addEventListener("submit", (e) => {
 $("#restartBtn").addEventListener("click", () => {
   token = null;
   log.replaceChildren();
+  renderSteps(0);
   send("");
   input.focus();
 });

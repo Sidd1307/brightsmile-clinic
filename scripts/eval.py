@@ -19,9 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
-from smilebot import clinic as C, flow  # noqa: E402
-from smilebot.booking import MemoryScheduler  # noqa: E402
-from smilebot.state import new_state  # noqa: E402
+from brightsmile import clinic as C, flow  # noqa: E402
+from brightsmile.booking import MemoryScheduler  # noqa: E402
+from brightsmile.state import new_state  # noqa: E402
 
 NOW = datetime(2026, 11, 9, 10, 0, tzinfo=C.TZ)  # Monday morning
 
@@ -88,7 +88,7 @@ async def run_one(name, turns, check, llm):
 async def main(use_ai: bool):
     llm = None
     if use_ai:
-        from smilebot.llm import GroqLLM
+        from brightsmile.llm import GroqLLM
         key = os.environ.get("GROQ_API_KEY")
         if not key:
             sys.exit("GROQ_API_KEY not set")

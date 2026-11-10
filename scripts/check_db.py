@@ -12,9 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
-from smilebot import clinic as C  # noqa: E402
-from smilebot.booking import SlotTaken  # noqa: E402
-from smilebot.store import Db, DbScheduler  # noqa: E402
+from brightsmile import clinic as C  # noqa: E402
+from brightsmile.booking import SlotTaken  # noqa: E402
+from brightsmile.store import Db, DbScheduler  # noqa: E402
 
 LEAD = {"name": "DB Check", "phone": "+910000000000", "email": "check@example.com", "purpose": "checkup",
         "details": {}, "urgent": False}
