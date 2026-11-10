@@ -12,3 +12,7 @@ screenshots/
 eval_ai.log
 node_modules/
 server_neon.log
+node_modules/
+neon.ts
+package.json
+package-lock.json

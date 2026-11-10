@@ -4,3 +4,9 @@ scripts
 screenshots
 *.db
 server.log
+node_modules
+neon.ts
+package.json
+package-lock.json
+.env
+*.log
