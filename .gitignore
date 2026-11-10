@@ -9,3 +9,4 @@ server.log
 screenshots/
 .pytest_cache/
 .vercel/
+eval_ai.log

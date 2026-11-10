@@ -93,14 +93,16 @@ class GroqLLM:
         ctx = (f"TODAY: {now.strftime('%A %Y-%m-%d %H:%M')} (Asia/Kolkata)\nEXPECTING: {st['expecting']}\n"
                f"KNOWN: {json.dumps(st['slots'])}\nOFFERED_SLOTS: {json.dumps(offered)}\n"
                f"RECENT_CHAT:\n{self._recent(st, 5)}\n\nPATIENT_MESSAGE: {msg}")
-        return json.loads(await self._chat(self.extract_model, EXTRACT_SYS, ctx, json_mode=True, max_tokens=300))
+        return json.loads(await self._chat_any(EXTRACT_SYS, ctx, max_tokens=300, temp=0.0, first=self.extract_model,
+                                               json_mode=True))
 
-    async def _chat_any(self, system: str, user: str, max_tokens: int, temp: float) -> str:
-        """Wording calls fall through to the next model when one is rate-limited (separate free-tier budgets)."""
+    async def _chat_any(self, system: str, user: str, max_tokens: int, temp: float, first: str | None = None,
+                        json_mode: bool = False) -> str:
+        """Fall through to the next model when one is rate-limited (each model has its own free-tier budget)."""
         last: Exception | None = None
-        for model in dict.fromkeys([self.phrase_model, self.summary_model, self.extract_model]):
+        for model in dict.fromkeys([first or self.phrase_model, self.phrase_model, self.summary_model, self.extract_model]):
             try:
-                return await self._chat(model, system, user, json_mode=False, max_tokens=max_tokens, temp=temp)
+                return await self._chat(model, system, user, json_mode=json_mode, max_tokens=max_tokens, temp=temp)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code != 429:
                     raise
