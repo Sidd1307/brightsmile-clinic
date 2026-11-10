@@ -56,7 +56,8 @@ the exact details follow your sentence automatically. No question marks. Output 
 SUMMARY_SYS = """You write CRM notes for a dental clinic from a receptionist chat transcript.
 Return ONLY JSON: {"summary": "2 factual sentences", "sentiment": "positive|neutral|anxious|frustrated",
 "lead_score": "hot|warm|cold", "urgency": "low|medium|high", "next_action": "one short instruction for staff"}.
-hot = high-value treatment (implants, braces, cosmetic) or urgent pain; cold = just browsing."""
+hot = high-value treatment (implants, braces, cosmetic) or urgent pain; warm = any other confirmed booking.
+These are all confirmed bookings, so never use cold."""
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 

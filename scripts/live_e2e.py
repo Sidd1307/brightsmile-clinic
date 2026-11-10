@@ -35,7 +35,10 @@ class Chat:
         self.state, self.log, self.last = None, [], None
 
     def say(self, msg: str) -> dict:
-        r = http.post(f"{BASE}/api/chat", json={"state": self.state, "message": msg})
+        try:
+            r = http.post(f"{BASE}/api/chat", json={"state": self.state, "message": msg})
+        except httpx.TransportError:  # a pooled keep-alive connection the edge already closed: retry once
+            r = http.post(f"{BASE}/api/chat", json={"state": self.state, "message": msg})
         if r.status_code == 429:  # our own per-IP limiter: wait and retry once
             time.sleep(30)
             r = http.post(f"{BASE}/api/chat", json={"state": self.state, "message": msg})

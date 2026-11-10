@@ -19,6 +19,10 @@ async def main():
     books = await db.run("SELECT count(*) AS n FROM bookings WHERE email LIKE ?", ("%@e2e.test",), fetch=True)
     await db.run("DELETE FROM leads WHERE email LIKE ?", ("%@e2e.test",))
     await db.run("DELETE FROM bookings WHERE email LIKE ?", ("%@e2e.test",))
+    # scripts/ui_smoke.py's patient (fixed name + phone + email signature)
+    smoke = ("Rahul Sharma", "+919876543210", "rahul@gmail.com")
+    await db.run("DELETE FROM leads WHERE name=? AND phone=? AND email=?", smoke)
+    await db.run("DELETE FROM bookings WHERE name=? AND phone=? AND email=?", smoke)
     left = await db.run("SELECT count(*) AS n FROM leads", fetch=True)
     print(f"removed {leads[0]['n']} test leads and {books[0]['n']} test bookings ({db.kind}); {left[0]['n']} leads remain")
 
