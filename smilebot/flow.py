@@ -62,7 +62,18 @@ PURPOSE_ACK = {
     "braces": "Sure, our orthodontist can help with that.",
 }
 GENERIC_ACKS = set(PURPOSE_ACK.values()) | {"Sure, I can help with that."}
+DIAGNOSIS_NOTE = ("That's one for the dentist. I can't diagnose over chat, but I've noted it so they can take "
+                  "a proper look at your visit.")
+GENERIC_ANSWER = "Good question. I don't have that answer here, but the team can help when you visit."
+OPTIONAL_FOLLOWUPS = {"pain_level", "swelling", "treatment", "child_age", "last_visit", "notes"}
+_PROCEED = re.compile(r"(?i)\b(earliest|asap|as soon as|soonest|just book|book it|skip|don'?t know|dont know|"
+                      r"not sure|no idea|whatever|doesn'?t matter|any ?time)\b")
 _QUESTION_START = re.compile(r"^(is|are|can|could|should|why|what|how|do|does|will|would|when|where|who)\b", re.I)
+
+
+_SMALLTALK = re.compile(
+    r"(?i)^(hi+|hello|hey|hiya|yo|good (morning|afternoon|evening)|how are you|how r u|what'?s up|thanks?|thank you|"
+    r"ty|cool|great|nice|awesome)\b[\s!.?,]*(there|aria|doing|today|so much|a lot)?[\s!.?]*$")
 
 
 def _is_question(msg: str) -> bool:
@@ -168,13 +179,39 @@ def _coerce_llm(raw: dict, st: dict) -> dict:
     out["slot_choice"] = choice if isinstance(choice, int) and 1 <= choice <= len(st["offered"]) else None
     out["question"] = raw.get("question") if isinstance(raw.get("question"), str) and raw.get("question").strip() else None
     out["intent"] = raw.get("intent") if raw.get("intent") in ("cancel", "reschedule") else None
+    out["smalltalk"] = raw.get("smalltalk") is True
     return out
+
+
+def _chip_labels(st: dict) -> set[str]:
+    labels = {c.lower() for _, chips in QUESTIONS.values() for c in chips}
+    labels |= {c.lower() for _, chips in TREATMENT_Q.values() for c in chips}
+    labels |= {c.lower() for c in PURPOSE_CHIPS} | {f.lower() for f in FIELD_LABELS.values()}
+    labels |= {"yes", "no", "yes, confirm", "change something", "yes, cancel it", "no, keep it", "reschedule",
+               "cancel my booking", "that's all, thanks"}
+    labels |= {C.fmt_slot(datetime.fromisoformat(o)).lower() for o in st["offered"]}
+    return labels
+
+
+def _rules_enough(msg: str, st: dict, ex: dict) -> bool:
+    """Skip the LLM extraction call when the rules already understood the message (button taps, bare values).
+    Saves ~1s and free-tier tokens; the LLM still writes the reply."""
+    m, exp, words = msg.strip().lower(), st["expecting"], len(msg.split())
+    if m in _chip_labels(st):
+        return True
+    if "?" in msg:
+        return False
+    if exp in ("phone", "email") and ex.get(exp) and words <= 4:
+        return True
+    if exp == "name" and ex.get("name") and words <= 3:
+        return True
+    return exp in ("pain_level", "child_age") and ex.get(exp) is not None and words <= 3
 
 
 async def extract(msg: str, st: dict, deps: Deps, now: datetime) -> tuple[dict, bool]:
     ex = rule_extract(msg, st, now)
     used_ai = False
-    if deps.llm:
+    if deps.llm and not _rules_enough(msg, st, ex):
         try:
             ai = _coerce_llm(await deps.llm.extract(msg, st, now), st)
             used_ai = True
@@ -213,11 +250,11 @@ def _offer(st: dict, slots: list[datetime]) -> list[str]:
 def _card(st: dict) -> dict:
     s, d = st["slots"], st["details"]
     det = []
-    if "pain_level" in d: det.append(f"Pain {d['pain_level']}/10")
-    if "swelling" in d: det.append("Swelling" if d["swelling"] else "No swelling")
+    if isinstance(d.get("pain_level"), int): det.append(f"Pain {d['pain_level']}/10")
+    if isinstance(d.get("swelling"), bool): det.append("Swelling" if d["swelling"] else "No swelling")
     for k in ("treatment", "last_visit", "notes"):
-        if k in d: det.append(str(d[k]))
-    if "child_age" in d: det.append(f"Child aged {d['child_age']}")
+        if k in d and d[k] != "not given": det.append(str(d[k]))
+    if isinstance(d.get("child_age"), int): det.append(f"Child aged {d['child_age']}")
     if "concern" in d and d["concern"] not in det: det.append(f"“{d['concern']}”")
     return {
         "name": s.get("name"), "phone": s.get("phone"), "email": s.get("email"),
@@ -287,6 +324,12 @@ async def _resolve_slot(st: dict, ex: dict, msg: str, deps: Deps, now: datetime)
                 return notes, _offer(st, [cand] + C.suggest_slots(cand + timedelta(minutes=30), now, busy, 2))
         notes.append(f"Sorry, {C.check_slot(datetime.combine(now.date(), t, C.TZ), now) or 'that time is not available'}.")
 
+    if st["offered"] and not pod and not notes:
+        # nothing new said about timing (e.g. they asked a question): keep offering the same choices
+        still_free = [s for s in map(datetime.fromisoformat, st["offered"])
+                      if s not in busy and C.check_slot(s, now) is None]
+        if still_free:
+            return notes, _offer(st, still_free)
     alts = C.suggest_slots(now, now, busy, 3, prefer=pod)
     return notes, _offer(st, alts)
 
@@ -375,20 +418,30 @@ async def _turn(st: dict, msg: str, deps: Deps, now: datetime) -> Reply:
         captured.add("email")
     exp = st["expecting"]
 
-    # --- free-text concerns and questions we can't answer from clinic facts ---
+    # --- free-text concerns, small talk and questions: understood, so never a "field error" ---
     if "purpose" in captured and len(msg.split()) >= 3:
         st["details"]["concern"] = msg[:200]  # keep the patient's own words for the dentist
-    if _is_question(msg) and not answer and not user_q:
-        if "purpose" in captured:
-            notes[:] = [n for n in notes if n not in GENERIC_ACKS]
-            notes.insert(0, "That's one for the dentist. I can't diagnose over chat, but I've noted it so they "
-                            "can take a proper look at your visit.")
-        else:
-            notes.insert(0, "Good question. I don't have that answer here, but the team can help when you visit.")
-        user_q = msg  # a question is not a failed answer, so don't show a field error
+    handled = bool(answer)
+    if not captured and not answer and (ex.get("smalltalk") or _SMALLTALK.match(msg.strip())):
+        handled, user_q = True, None
+        notes.insert(0, "You're welcome!" if re.match(r"(?i)\s*(thank|ty\b)", msg) else "Hi there, I'm doing well, thank you!")
+    elif not answer and _is_question(msg) and V.is_symptom_question(msg):
+        # symptoms are never handed to the LLM as an open question: no diagnosis, ever
+        handled, user_q = True, None
+        notes[:] = [n for n in notes if n not in GENERIC_ACKS]
+        notes.insert(0, DIAGNOSIS_NOTE)
+    elif not answer and _is_question(msg) and not captured and not (ex.get("date") or ex.get("time")):
+        # a real question (not "can we come tomorrow?", which is booking info phrased as a question)
+        handled, user_q = True, user_q or msg  # LLM may answer from clinic facts; template adds a fallback line
+
+    # --- optional follow-ups: don't trap someone who'd rather just book ---
+    if exp in OPTIONAL_FOLLOWUPS and exp not in captured and not handled and (
+            st["fails"].get(exp) or _PROCEED.search(msg)):
+        st["details"][exp] = "not given"
+        captured.add(exp)
 
     # --- errors on the field we asked for ---
-    if exp and exp not in captured and not answer and not user_q:
+    if exp and exp not in captured and not handled:
         attempted = (
             (exp == "phone" and V.looks_like_phone_attempt(msg)) or (exp == "email" and "@" in msg)
             or (exp == "name" and not captured) or (exp in ("pain_level", "swelling", "child_age", "purpose") and not captured)
@@ -408,9 +461,14 @@ async def _turn(st: dict, msg: str, deps: Deps, now: datetime) -> Reply:
     need = _needed(st)
     chips: list[str] = []
     if need and need[0] == "slot":
+        pref = st["details"].pop("pref", None)
+        if pref and not (ex.get("date") or ex.get("time") or ex.get("part_of_day")):
+            # use the "can we come today?" they mentioned before we got here
+            ex = {**ex, "date": date.fromisoformat(pref["date"]) if pref.get("date") else None,
+                  "time": time.fromisoformat(pref["time"]) if pref.get("time") else None, "part_of_day": pref.get("pod")}
         slot_notes, chips = await _resolve_slot(st, ex, msg, deps, now)
         if "slot" not in st["slots"]:
-            if exp == "slot" and not slot_notes and not (ex.get("date") or ex.get("time")) and not answer and not captured:
+            if exp == "slot" and not slot_notes and not (ex.get("date") or ex.get("time")) and not handled and not captured:
                 notes.append(_fail(st, "slot"))
             if not slot_notes:
                 if st["urgent"] and "urgent_noted" not in st["details"]:
@@ -425,16 +483,18 @@ async def _turn(st: dict, msg: str, deps: Deps, now: datetime) -> Reply:
             else:
                 q = " ".join(slot_notes)
             st["expecting"] = "slot"
-            return await _respond(st, deps, notes, answer, q, chips, used_ai, user_q)
+            return await _respond(st, deps, notes, answer, q, chips, used_ai, user_q, critical=True)
         need = _needed(st)
-    elif ex.get("date") or ex.get("time"):
-        # remember the preference for later, only once
-        st["details"]["pref"] = msg
+    elif ex.get("date") or ex.get("time") or ex.get("part_of_day"):
+        # remember the preference until we reach scheduling
+        st["details"]["pref"] = {"date": ex["date"].isoformat() if ex.get("date") else None,
+                                 "time": ex["time"].isoformat() if ex.get("time") else None, "pod": ex.get("part_of_day")}
 
     if not need:
         st["stage"], st["expecting"] = "confirm", None
         r = await _respond(st, deps, notes + ["Here's a summary of your appointment."], answer,
-                           "Shall I go ahead and confirm it?", ["Yes, confirm", "Change something"], used_ai, user_q)
+                           "Shall I go ahead and confirm it?", ["Yes, confirm", "Change something"], used_ai, user_q,
+                           critical=True)
         r.card = _card(st)
         return r
 
@@ -474,7 +534,8 @@ def _apply(st: dict, ex: dict, notes: list[str]) -> set[str]:
                 captured.add(k)
     if ex.get("notes") and s.get("purpose") == "other":
         d.setdefault("notes", ex["notes"])
-    if (d.get("pain_level") or 0) >= 8 or d.get("swelling") is True:
+    pain = d.get("pain_level")
+    if (isinstance(pain, int) and pain >= 8) or d.get("swelling") is True:
         st["urgent"] = True
     if captured == {"purpose"} and (st["expecting"] != "purpose" or s["purpose"] in PURPOSE_ACK):
         notes.append(PURPOSE_ACK.get(s["purpose"], "Sure, I can help with that."))
@@ -514,16 +575,44 @@ def _chips_for(st: dict) -> list[str]:
     return []
 
 
-async def _respond(st, deps, notes, answer, question, chips, used_ai, user_q=None) -> Reply:
-    """Compose the reply. The LLM may rephrase it; if it fails we use the template."""
+_PROMISE = re.compile(r"(?i)\b(confirmed|booked|book(ed)? you in|you're all set|see you (then|on|at|soon)|locked in|"
+                      r"we'll see you|works for us|we can see (you|him|her|them) today|lock(ed)? (that |it |this )?in|"
+                      r"all set|reserved|secured)\b")
+
+
+def _safe(out: str, plan: str, st: dict) -> bool:
+    """Reject LLM wording that adds facts: every number must come from the plan, clinic facts or the patient,
+    and nothing may sound booked before it is."""
+    if _PROMISE.search(out):
+        return False
+    allowed = set(re.findall(r"\d+", plan + " " + " ".join(C.FACTS.values()) + " " +
+                             " ".join(t["text"] for t in st["transcript"][-4:] if t["role"] == "user")))
+    return all(n in allowed for n in re.findall(r"\d+", out))
+
+
+async def _respond(st, deps, notes, answer, question, chips, used_ai, user_q=None, critical=False) -> Reply:
+    """Compose the reply. The LLM may add warmth; code owns the facts.
+
+    critical=True (slot offers, the confirmation summary): the LLM writes one reaction sentence and the exact
+    template follows verbatim. Otherwise the LLM rewrites the whole turn, and its output is fact-checked.
+    """
     template = " ".join(p for p in [*notes, answer, question] if p)
-    text = template
+    fallback = (f"{GENERIC_ANSWER} {template}" if user_q and not answer else template)
+    text = fallback
     if deps.llm:
         try:
-            text = await deps.llm.phrase(st, notes, answer, question, user_q) or template
-            used_ai = True
+            if critical:
+                lead = await deps.llm.react(st, user_q)
+                if lead and not re.search(r"\d", lead) and not _PROMISE.search(lead) and "?" not in lead:
+                    text, used_ai = f"{lead} {template}", True
+            else:
+                out = await deps.llm.phrase(st, notes, answer, question, user_q)
+                if out and _safe(out, template, st) and (not question or "?" in out):
+                    text, used_ai = out, True
+                else:
+                    log.info("llm wording rejected by fact check; using template")
         except Exception as e:
-            log.warning("llm phrase failed, using template: %s", e)
+            log.warning("llm wording failed, using template: %s", e)
     return Reply(text, chips=chips, used_ai=used_ai)
 
 

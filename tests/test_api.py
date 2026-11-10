@@ -77,7 +77,7 @@ async def test_db_unique_index_blocks_concurrent_double_booking(db):
 
 
 # ---------------- LLM path (mocked Groq) ----------------
-def groq_mock(extract: dict, phrase: str = "AI reply", fail: bool = False):
+def groq_mock(extract: dict, phrase: str = "AI reply?", fail: bool = False):
     def handler(req: httpx.Request):
         if fail:
             return httpx.Response(503, json={"error": "down"})
@@ -101,7 +101,7 @@ async def test_llm_extraction_is_validated_not_trusted():
     await flow.turn(st, "", d)
     r = await flow.turn(st, "hey it's rahul, call me on 12, mail not-an-email, tue 4", d)
     assert st["slots"] == {"name": "Rahul Sharma"}  # bad phone/email/purpose dropped
-    assert r.text == "AI reply" and r.used_ai
+    assert r.text == "AI reply?" and r.used_ai
 
 
 async def test_llm_outage_falls_back_to_rules():

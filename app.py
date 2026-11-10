@@ -80,6 +80,7 @@ async def chat(body: ChatIn, request: Request):
         raise HTTPException(429, "Too many messages — please slow down a little.")
     try:
         st = verify(body.state)
+        st["voice"] = body.voice  # shorter, emoji-free replies when spoken aloud
     except BadState:
         raise HTTPException(400, "Conversation expired — please start again.")
     t0 = time.perf_counter()

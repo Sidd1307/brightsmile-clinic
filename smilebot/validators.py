@@ -38,6 +38,8 @@ def extract_name(text: str, expecting: bool = False) -> str | None:
     if expecting:  # bare answer to "what's your name?"
         if re.search(r"[?!@#\d]", text):  # names don't come with ???, digits or symbols
             return None
+        if "," in text:  # "Priya, Priya Menon" → the fullest part
+            text = max(text.split(","), key=lambda s: len(s.split()))
         cleaned = re.sub(r"[^\w .'\-]", "", text).strip()
         if 1 <= len(cleaned.split()) <= 3 and not _looks_mashed(cleaned):
             return validate_name(cleaned)
@@ -138,6 +140,18 @@ PURPOSES["toothache"] += ["killing me", "tooth is", "teeth are", "throbbing"]
 PURPOSES["kids"] += ["year old", "yr old", "years old", "my little"]
 _PURPOSE_RE = {p: [re.compile(r"\b" + re.escape(k) + (r"\b" if k in ("exam", "son", "general") else "")) for k in kws]
                for p, kws in PURPOSES.items()}
+
+
+_SYMPTOM_WORDS = re.compile(
+    r"(?i)\b(tongue|gums?|teeth|tooth|mouth|jaw|lips?|breath|ulcers?|cheek)\b.*\b(yellow|white|black|red|pain|hurts?|"
+    r"ache|aching|bleed\w*|swell\w*|sensitive|normal|sore|loose|crack\w*|broke\w*|chipped|smell\w*|spots?|lump|numb)\b|"
+    r"\b(yellow|white|black|red|pain|hurts?|bleed\w*|swollen|sore|loose|bad)\b.*\b(tongue|gums?|teeth|tooth|mouth|jaw|breath)\b")
+_PERSONAL = re.compile(r"(?i)\b(my|i have|i've|i am|i'm|i got|is it normal|is that normal|is this normal)\b")
+
+
+def is_symptom_question(text: str) -> bool:
+    """A question about the patient's own symptoms (needs a dentist, not a chatbot answer)."""
+    return bool(_PERSONAL.search(text) and _SYMPTOM_WORDS.search(text))
 
 
 def classify_purpose(text: str) -> str | None:

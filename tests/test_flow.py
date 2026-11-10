@@ -208,3 +208,72 @@ async def test_gum_bleeding_question_gets_no_diagnosis_and_purpose():
 async def test_location_faq_near_metro():
     st, rs = await chat(["is the clinic near the metro?"])
     assert "Lakeview Road" in rs[-1].text
+
+
+async def test_smalltalk_is_not_a_name_error():
+    st, rs = await chat(["hi, how are you?"])
+    assert "didn't quite catch" not in rs[-1].text and "name" in rs[-1].text
+
+
+def test_fast_path_skips_llm_for_button_taps_and_bare_values():
+    st = new_state()
+    st["expecting"] = "phone"
+    ex = flow.rule_extract("98765 43210", st, NOW)
+    assert flow._rules_enough("98765 43210", st, ex)
+    assert flow._rules_enough("Yes, confirm", st, ex)
+    st["expecting"] = "name"
+    assert not flow._rules_enough("hey it's rahul and my tooth hurts", st, flow.rule_extract("hey it's rahul and my tooth hurts", st, NOW))
+
+
+def test_symptom_vs_general_question():
+    from smilebot.validators import is_symptom_question as s
+    assert s("I have yellow tongue, is that normal?") and s("why do my gums bleed?")
+    assert not s("does a checkup hurt?") and not s("how long does whitening last?")
+
+
+def test_fact_guard_rejects_invented_numbers_and_promises():
+    st = new_state()
+    st["transcript"] = [{"role": "user", "text": "the first one"}]
+    plan = "Here's a summary of your appointment. Thu 12 Nov, 4:00 PM. Shall I go ahead and confirm it?"
+    assert flow._safe("Lovely! Thursday 12 Nov at 4:00 PM it is. Shall I confirm?", plan, st)
+    assert not flow._safe("Thursday at 5 pm then. Shall I confirm?", plan, st)
+    assert not flow._safe("Great, we'll see you then!", plan, st)
+
+
+class _LyingLLM:
+    """An LLM that ignores instructions: invents a time and claims the booking."""
+    async def extract(self, msg, st, now): return {}
+    async def phrase(self, st, notes, answer, question, user_q=None): return "Booked for 5 pm, see you then! Anything else?"
+    async def react(self, st, user_q=None): return "Great, you're booked for 5 pm!"
+    async def summarize(self, transcript, lead): return None
+
+
+async def test_lying_llm_cannot_change_facts():
+    d = flow.Deps(scheduler=MemoryScheduler(), llm=_LyingLLM(), now=lambda: NOW)
+    st, rs = await chat(["Priya Sharma", "9876543210", "priya@example.com", "checkup", "never", "tomorrow 4pm"], d)
+    assert "5 pm" not in rs[-1].text and "summary" in rs[-1].text and rs[-1].card["slot"] == "Tue 10 Nov, 4:00 PM"
+    assert all("booked" not in r.text.lower() for r in rs)
+
+
+async def test_ignored_followup_is_skipped_and_early_date_preference_used():
+    st, rs = await chat(["my son broke his tooth, can we come tomorrow?", "Ananya Shah", "9819012345",
+                         "ananya@example.com", "ok the earliest please"])
+    assert "not given" in st["details"].values() and st["expecting"] == "slot"
+    assert all(c.startswith("Tue 10 Nov") for c in rs[-1].chips)  # "tomorrow" from the first message
+    assert "Good question" not in rs[1].text
+
+
+async def test_comma_name():
+    st, _ = await chat(["Priya, Priya Menon"])
+    assert st["slots"]["name"] == "Priya Menon"
+
+
+async def test_skipped_pain_then_swelling_does_not_crash():
+    st, rs = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "toothache", "just book it", "yes"])
+    assert st["details"]["pain_level"] == "not given" and st["urgent"] is True and st["expecting"] == "slot"
+
+
+async def test_question_during_scheduling_keeps_same_offered_slots():
+    st, rs = await chat(["Ravi Kumar", "9876543210", "ravi@example.com", "cleaning", "never", "friday afternoon",
+                         "how much is a cleaning?"])
+    assert rs[-1].chips == rs[-2].chips and rs[-1].chips[0].startswith("Fri 13 Nov")
