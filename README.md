@@ -2,7 +2,7 @@
 
 Aria is the virtual receptionist for *BrightSmile Clinic* (a fictional clinic). Patients can **chat** or **call** her. She greets them, collects their details, asks follow-up questions that fit their problem, flags emergencies, finds a free slot and books it into Google Calendar. The clinic team then sees every booking on a dashboard with an AI-written summary.
 
-**Live demo:** https://smilebot-wine.vercel.app · **Staff dashboard:** https://smilebot-wine.vercel.app/dashboard.html (access code `demo`) · **Code:** https://github.com/Sidd1307/smilebot
+**Live demo:** https://brightsmile-clinic-app.vercel.app · **Demo video:** https://www.loom.com/share/d6cc1d6302f641bc9090e7230be677ea · **Staff dashboard:** https://brightsmile-clinic-app.vercel.app/dashboard.html (access code `demo`) · **Code:** https://github.com/Sidd1307/brightsmile-clinic
 
 ## What it does
 
@@ -59,10 +59,11 @@ Open http://127.0.0.1:8000. Voice calls need Chrome, Edge or Safari.
 ## Tests
 
 ```bash
-pytest                                  # 100+ unit/integration tests (flow, validators, DB race, LLM mocks, calendar mocks)
+pytest                                  # 119 unit/integration tests (flow, validators, DB race, LLM mocks, calendar mocks)
 python scripts/eval.py                  # 15 messy end-to-end conversations, rules engine
 python scripts/eval.py --ai             # same, with Groq
 python scripts/ui_smoke.py http://127.0.0.1:8000   # real browser: full booking + mobile + dashboard
+python scripts/live_e2e.py https://brightsmile-clinic-app.vercel.app   # 34 checks against production (then scripts/live_cleanup.py)
 ```
 
 ## Deploy (Vercel)
