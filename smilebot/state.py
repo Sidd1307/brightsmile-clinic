@@ -12,7 +12,12 @@ import json
 import os
 import zlib
 
-_SECRET = os.environ.get("SESSION_SECRET", "dev-only-secret-change-me").encode()
+_RAW = os.environ.get("SESSION_SECRET", "")
+if os.environ.get("VERCEL") and (len(_RAW) < 24 or _RAW in ("change-me", "dev-only-secret-change-me")):
+    import logging
+    logging.getLogger("smilebot.state").critical(
+        "SESSION_SECRET is missing or a placeholder in production: conversation state can be forged. Set a long random value.")
+_SECRET = (_RAW or "dev-only-secret-change-me").encode()
 
 
 class BadState(ValueError):
