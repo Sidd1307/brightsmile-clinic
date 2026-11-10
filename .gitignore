@@ -10,3 +10,5 @@ screenshots/
 .pytest_cache/
 .vercel/
 eval_ai.log
+node_modules/
+server_neon.log

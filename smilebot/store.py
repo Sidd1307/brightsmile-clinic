@@ -41,7 +41,8 @@ class Db:
     def _connect(self):
         if self.kind == "postgres":
             import psycopg
-            return psycopg.connect(self.url, autocommit=True, connect_timeout=5)
+            # prepare_threshold=None: Neon's pooled (PgBouncer) endpoint doesn't support prepared statements
+            return psycopg.connect(self.url, autocommit=True, connect_timeout=5, prepare_threshold=None)
         return sqlite3.connect(self.path, timeout=10, isolation_level=None)
 
     def _init(self, con):
